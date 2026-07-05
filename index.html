@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Saúde">
 <meta name="theme-color" content="#F2F4F0">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>Registro de Saúde</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -387,7 +390,7 @@
         <div class="field-row">
           <div class="field">
             <label>Data</label>
-            <input type="date" id="gData">
+            <input type="text" inputmode="numeric" id="gData" placeholder="DD/MM/AAAA" maxlength="10" class="date-input">
           </div>
           <div class="field">
             <label>Hora</label>
@@ -439,7 +442,7 @@
         <div class="field-row">
           <div class="field">
             <label>Data</label>
-            <input type="date" id="pData">
+            <input type="text" inputmode="numeric" id="pData" placeholder="DD/MM/AAAA" maxlength="10" class="date-input">
           </div>
           <div class="field">
             <label>Hora</label>
@@ -499,7 +502,7 @@
         <div class="field-row">
           <div class="field">
             <label>Data</label>
-            <input type="date" id="sData">
+            <input type="text" inputmode="numeric" id="sData" placeholder="DD/MM/AAAA" maxlength="10" class="date-input">
           </div>
           <div class="field">
             <label>Hora</label>
@@ -576,13 +579,42 @@ let activeFilter = {glicemia:7, pressao:7, saturacao:7};
 /* ---------------- Init defaults ---------------- */
 function pad(n){return n.toString().padStart(2,'0');}
 function nowDate(){const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function nowDateBR(){const d=new Date(); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;}
 function nowTime(){const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;}
 
-document.getElementById('gData').value = nowDate();
+/* Converte DD/MM/AAAA (exibido) para AAAA-MM-DD (armazenado, ordenável). Retorna null se inválido. */
+function brToISO(br){
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return null;
+  const [, d, mo, y] = m;
+  const day = Number(d), month = Number(mo), year = Number(y);
+  if(month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${y}-${mo}-${d}`;
+}
+/* Converte AAAA-MM-DD (armazenado) para DD/MM/AAAA (exibido) */
+function isoToBR(iso){
+  const [y, mo, d] = iso.split('-');
+  return `${d}/${mo}/${y}`;
+}
+
+/* Formata automaticamente enquanto digita: insere as barras DD/MM/AAAA */
+function attachDateAutoFormat(id){
+  const el = document.getElementById(id);
+  el.addEventListener('input', ()=>{
+    let digits = el.value.replace(/\D/g,'').slice(0,8);
+    let out = digits;
+    if(digits.length > 4) out = `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+    else if(digits.length > 2) out = `${digits.slice(0,2)}/${digits.slice(2)}`;
+    el.value = out;
+  });
+}
+['gData','pData','sData'].forEach(attachDateAutoFormat);
+
+document.getElementById('gData').value = nowDateBR();
 document.getElementById('gHora').value = nowTime();
-document.getElementById('pData').value = nowDate();
+document.getElementById('pData').value = nowDateBR();
 document.getElementById('pHora').value = nowTime();
-document.getElementById('sData').value = nowDate();
+document.getElementById('sData').value = nowDateBR();
 document.getElementById('sHora').value = nowTime();
 
 /* ---------------- Mode switch ---------------- */
@@ -629,21 +661,23 @@ function showToast(msg){
 
 function saveEntry(type){
   if(type === 'glicemia'){
-    const data = document.getElementById('gData').value;
+    const data = brToISO(document.getElementById('gData').value);
     const hora = document.getElementById('gHora').value;
     const valor = document.getElementById('gValor').value;
-    if(!data || !hora || !valor){ showToast('Preencha data, hora e valor'); return; }
+    if(!data){ showToast('Data inválida — use DD/MM/AAAA'); return; }
+    if(!hora || !valor){ showToast('Preencha data, hora e valor'); return; }
     db.glicemia.push({id:Date.now(), data, hora, valor:Number(valor), contexto:selectedChip.glicemia});
     document.getElementById('gValor').value = '';
     document.querySelectorAll('#gChips .chip').forEach(c=>c.classList.remove('selected'));
     selectedChip.glicemia = null;
   } else if(type === 'pressao'){
-    const data = document.getElementById('pData').value;
+    const data = brToISO(document.getElementById('pData').value);
     const hora = document.getElementById('pHora').value;
     const sis = document.getElementById('pSis').value;
     const dia = document.getElementById('pDia').value;
     const pulso = document.getElementById('pPulso').value;
-    if(!data || !hora || !sis || !dia){ showToast('Preencha data, hora, sistólica e diastólica'); return; }
+    if(!data){ showToast('Data inválida — use DD/MM/AAAA'); return; }
+    if(!hora || !sis || !dia){ showToast('Preencha data, hora, sistólica e diastólica'); return; }
     db.pressao.push({id:Date.now(), data, hora, sistolica:Number(sis), diastolica:Number(dia), pulso: pulso?Number(pulso):null, contexto:selectedChip.pressao});
     document.getElementById('pSis').value = '';
     document.getElementById('pDia').value = '';
@@ -651,11 +685,12 @@ function saveEntry(type){
     document.querySelectorAll('#pChips .chip').forEach(c=>c.classList.remove('selected'));
     selectedChip.pressao = null;
   } else {
-    const data = document.getElementById('sData').value;
+    const data = brToISO(document.getElementById('sData').value);
     const hora = document.getElementById('sHora').value;
     const valor = document.getElementById('sValor').value;
     const pulso = document.getElementById('sPulso').value;
-    if(!data || !hora || !valor){ showToast('Preencha data, hora e saturação'); return; }
+    if(!data){ showToast('Data inválida — use DD/MM/AAAA'); return; }
+    if(!hora || !valor){ showToast('Preencha data, hora e saturação'); return; }
     db.saturacao.push({id:Date.now(), data, hora, valor:Number(valor), pulso: pulso?Number(pulso):null, contexto:selectedChip.saturacao});
     document.getElementById('sValor').value = '';
     document.getElementById('sPulso').value = '';
@@ -900,19 +935,19 @@ function exportCSV(type){
   if(type === 'glicemia'){
     rows = [['data','hora','valor_mgdl','contexto']];
     [...db.glicemia].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
-      rows.push([e.data, e.hora, e.valor, e.contexto || '']);
+      rows.push([isoToBR(e.data), e.hora, e.valor, e.contexto || '']);
     });
     filename = 'glicemia.csv';
   } else if(type === 'pressao'){
     rows = [['data','hora','sistolica','diastolica','pulso','contexto']];
     [...db.pressao].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
-      rows.push([e.data, e.hora, e.sistolica, e.diastolica, e.pulso || '', e.contexto || '']);
+      rows.push([isoToBR(e.data), e.hora, e.sistolica, e.diastolica, e.pulso || '', e.contexto || '']);
     });
     filename = 'pressao.csv';
   } else {
     rows = [['data','hora','saturacao_pct','pulso','contexto']];
     [...db.saturacao].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
-      rows.push([e.data, e.hora, e.valor, e.pulso || '', e.contexto || '']);
+      rows.push([isoToBR(e.data), e.hora, e.valor, e.pulso || '', e.contexto || '']);
     });
     filename = 'saturacao.csv';
   }
@@ -934,6 +969,12 @@ function render(){
   renderSaturacao();
 }
 render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
