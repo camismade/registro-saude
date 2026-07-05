@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Saúde">
+<meta name="theme-color" content="#F2F4F0">
+<title>Registro de Saúde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F4F0;
+    --paper:#FFFFFF;
+    --ink:#1E2B24;
+    --ink-soft:#5C6A62;
+    --ink-faint:#94A099;
+    --line:#DBE1D6;
+    --line-strong:#C3CBBD;
+    --glic:#4C7A6B;
+    --glic-soft:#E3EEE8;
+    --glic-deep:#31544A;
+    --pres:#C4634A;
+    --pres-soft:#F6E5DE;
+    --pres-deep:#9A4630;
+    --sat:#3E6E8E;
+    --sat-soft:#DFEAF0;
+    --sat-deep:#284B60;
+    --alert:#B23A3A;
+    --alert-soft:#F7E3E0;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(30,43,36,0.06), 0 4px 14px rgba(30,43,36,0.05);
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding-bottom:100px;
+  }
+
+  .app{
+    width:100%;
+    max-width:460px;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:28px 20px 16px;
+    position:relative;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin:0 0 4px;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:28px;
+    line-height:1.1;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+
+  h1 .accent-glic{color:var(--glic-deep);}
+  h1 .accent-pres{color:var(--pres-deep);}
+
+  /* ---------- Segmented control ---------- */
+  .segmented{
+    margin:18px 20px 0;
+    display:flex;
+    background:var(--paper);
+    border-radius:12px;
+    padding:4px;
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+
+  .segmented button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:11px 8px;
+    font-family:'Inter';
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+    border-radius:9px;
+    cursor:pointer;
+    transition:color .2s ease;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+  }
+
+  .segmented button svg{width:16px;height:16px;flex-shrink:0;}
+
+  .segmented button.active{
+    color:#fff;
+  }
+  .segmented .thumb{
+    position:absolute;
+    top:4px; left:4px;
+    width:calc(33.333% - 2.66px);
+    height:calc(100% - 8px);
+    border-radius:9px;
+    background:var(--glic);
+    transition:transform .25s cubic-bezier(.4,0,.2,1), background .25s ease;
+    z-index:0;
+  }
+  .segmented button{position:relative; z-index:1; font-size:13px; padding:11px 4px;}
+  body.mode-pressao .thumb{transform:translateX(100%); background:var(--pres);}
+  body.mode-saturacao .thumb{transform:translateX(200%); background:var(--sat);}
+
+  /* ---------- Sections ---------- */
+  main{padding:20px 20px 0;}
+
+  section.panel{display:none;}
+  section.panel.active{display:block; animation:fade .3s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------- Quick add card ---------- */
+  .card{
+    background:var(--paper);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-top:16px;
+  }
+
+  .card h2{
+    font-family:'Fraunces', serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.g{background:var(--glic);}
+  .dot.p{background:var(--pres);}
+  .dot.s{background:var(--sat);}
+
+  .field-row{display:flex; gap:10px; margin-bottom:12px;}
+  .field{flex:1; display:flex; flex-direction:column; gap:6px;}
+  .field label{
+    font-size:11px;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .field input, .field select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    padding:11px 10px;
+    border-radius:9px;
+    border:1.5px solid var(--line);
+    background:#FCFDFB;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease;
+    width:100%;
+  }
+  .field select{font-family:'Inter'; font-size:14px;}
+  .field input:focus, .field select:focus{border-color:var(--glic);}
+  body.mode-pressao .field input:focus, body.mode-pressao .field select:focus{border-color:var(--pres);}
+  body.mode-saturacao .field input:focus, body.mode-saturacao .field select:focus{border-color:var(--sat);}
+
+  .context-chips{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .chip{
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:20px;
+    border:1.5px solid var(--line);
+    background:#FCFDFB;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .chip.selected{background:var(--glic-soft); border-color:var(--glic); color:var(--glic-deep);}
+  body.mode-pressao .chip.selected{background:var(--pres-soft); border-color:var(--pres); color:var(--pres-deep);}
+  body.mode-saturacao .chip.selected{background:var(--sat-soft); border-color:var(--sat); color:var(--sat-deep);}
+
+  .btn-save{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:11px;
+    background:var(--glic);
+    color:#fff;
+    font-family:'Inter';
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:background .15s ease, transform .08s ease;
+  }
+  .btn-save:active{transform:scale(0.98);}
+  body.mode-pressao .btn-save{background:var(--pres);}
+  body.mode-saturacao .btn-save{background:var(--sat);}
+
+  /* ---------- Trend sparkline ---------- */
+  .trend-card{margin-top:14px; padding:16px 18px 10px;}
+  .trend-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .trend-head .label{font-size:12px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
+  .trend-head .latest{font-family:'IBM Plex Mono'; font-size:22px; font-weight:600; color:var(--ink);}
+  .trend-head .latest .unit{font-size:12px; color:var(--ink-faint); font-weight:500; margin-left:3px;}
+  .empty-trend{font-size:13px; color:var(--ink-faint); padding:10px 0 16px; text-align:center;}
+
+  /* ---------- Filters ---------- */
+  .filter-row{
+    display:flex; gap:8px; margin:20px 0 10px; align-items:center; justify-content:space-between;
+  }
+  .filter-tabs{display:flex; gap:6px;}
+  .filter-tabs button{
+    border:none; background:transparent; color:var(--ink-faint);
+    font-family:'IBM Plex Mono'; font-size:12px; font-weight:600;
+    padding:5px 9px; border-radius:7px; cursor:pointer;
+  }
+  .filter-tabs button.active{background:var(--paper); color:var(--ink); box-shadow:var(--shadow);}
+  .export-btn{
+    border:none; background:transparent; color:var(--ink-soft);
+    font-size:12px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+    font-family:'Inter';
+  }
+  .export-btn svg{width:13px;height:13px;}
+
+  /* ---------- Ruled history ---------- */
+  .history{
+    background:var(--paper);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+
+  .day-group{position:relative;}
+  .day-label{
+    font-family:'IBM Plex Mono';
+    font-size:11px;
+    color:var(--ink-faint);
+    padding:12px 16px 4px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .entry-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .entry-row:last-child{border-bottom:none;}
+
+  .entry-row .rule-dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--glic);
+    flex-shrink:0;
+    box-shadow:0 0 0 3px var(--glic-soft);
+  }
+  body.mode-pressao .entry-row .rule-dot{background:var(--pres); box-shadow:0 0 0 3px var(--pres-soft);}
+  body.mode-saturacao .entry-row .rule-dot{background:var(--sat); box-shadow:0 0 0 3px var(--sat-soft);}
+  .entry-row.high .rule-dot{background:var(--alert); box-shadow:0 0 0 3px var(--alert-soft);}
+
+  .entry-time{
+    font-family:'IBM Plex Mono';
+    font-size:12px;
+    color:var(--ink-faint);
+    width:42px;
+    flex-shrink:0;
+  }
+
+  .entry-value{
+    font-family:'IBM Plex Mono';
+    font-size:17px;
+    font-weight:600;
+    color:var(--ink);
+    flex-shrink:0;
+  }
+  .entry-value .unit{font-size:11px; font-weight:500; color:var(--ink-faint); margin-left:2px;}
+  .entry-row.high .entry-value{color:var(--alert);}
+
+  .entry-context{
+    font-size:12px;
+    color:var(--ink-soft);
+    flex:1;
+    text-align:right;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .entry-del{
+    border:none; background:transparent; color:var(--ink-faint);
+    font-size:16px; padding:2px 4px; cursor:pointer; flex-shrink:0;
+    line-height:1;
+  }
+
+  .empty-state{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--ink-faint);
+  }
+  .empty-state svg{width:36px;height:36px;margin-bottom:10px; opacity:.5;}
+  .empty-state p{font-size:13px; margin:0; line-height:1.5;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:11px 18px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+    z-index:50;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  ::selection{background:var(--glic-soft);}
+</style>
+</head>
+<body class="mode-glicemia">
+<div class="app">
+
+  <header>
+    <h1 id="pageTitle">Sinais vitais</h1>
+  </header>
+
+  <div class="segmented">
+    <div class="thumb"></div>
+    <button id="tabGlicemia" class="active" onclick="switchMode('glicemia')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l4 8H8l4-8zM6 12h12l-1.5 8h-9L6 12z"/></svg>
+      Glicemia
+    </button>
+    <button id="tabPressao" onclick="switchMode('pressao')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9C.5 8 2 4 6 4c2.2 0 3.7 1.3 6 4 2.3-2.7 3.8-4 6-4 4 0 5.5 4 3.5 8-2.5 4.5-9.5 9-9.5 9z"/></svg>
+      Pressão
+    </button>
+    <button id="tabSaturacao" onclick="switchMode('saturacao')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 6.5 6 11a6 6 0 01-12 0c0-4.5 6-11 6-11z"/></svg>
+      SpO₂
+    </button>
+  </div>
+
+  <main>
+
+    <!-- ============ GLICEMIA PANEL ============ -->
+    <section id="panelGlicemia" class="panel active">
+      <div class="card">
+        <h2><span class="dot g"></span>Novo registro</h2>
+        <div class="field-row">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="gData">
+          </div>
+          <div class="field">
+            <label>Hora</label>
+            <input type="time" id="gHora">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Glicemia (mg/dL)</label>
+            <input type="number" inputmode="numeric" id="gValor" placeholder="Ex: 98">
+          </div>
+        </div>
+        <div class="context-chips" id="gChips">
+          <div class="chip" data-v="Jejum">Jejum</div>
+          <div class="chip" data-v="Antes da refeição">Antes da refeição</div>
+          <div class="chip" data-v="Depois da refeição">Depois da refeição</div>
+          <div class="chip" data-v="Antes de dormir">Antes de dormir</div>
+        </div>
+        <button class="btn-save" onclick="saveEntry('glicemia')">Salvar registro</button>
+      </div>
+
+      <div class="card trend-card">
+        <div class="trend-head">
+          <span class="label">Última medição</span>
+          <span class="latest" id="gLatest">—<span class="unit">mg/dL</span></span>
+        </div>
+        <div id="gSparkWrap"></div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-tabs" id="gFilters">
+          <button data-days="7" class="active">7d</button>
+          <button data-days="30">30d</button>
+          <button data-days="0">Tudo</button>
+        </div>
+        <button class="export-btn" onclick="exportCSV('glicemia')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Exportar
+        </button>
+      </div>
+
+      <div class="history" id="gHistory"></div>
+    </section>
+
+    <!-- ============ PRESSÃO PANEL ============ -->
+    <section id="panelPressao" class="panel">
+      <div class="card">
+        <h2><span class="dot p"></span>Novo registro</h2>
+        <div class="field-row">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="pData">
+          </div>
+          <div class="field">
+            <label>Hora</label>
+            <input type="time" id="pHora">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Sistólica</label>
+            <input type="number" inputmode="numeric" id="pSis" placeholder="Ex: 120">
+          </div>
+          <div class="field">
+            <label>Diastólica</label>
+            <input type="number" inputmode="numeric" id="pDia" placeholder="Ex: 80">
+          </div>
+          <div class="field">
+            <label>Pulso</label>
+            <input type="number" inputmode="numeric" id="pPulso" placeholder="Ex: 72">
+          </div>
+        </div>
+        <div class="context-chips" id="pChips">
+          <div class="chip" data-v="Em repouso">Em repouso</div>
+          <div class="chip" data-v="Após atividade">Após atividade</div>
+          <div class="chip" data-v="Antes do remédio">Antes do remédio</div>
+          <div class="chip" data-v="Após o remédio">Após o remédio</div>
+        </div>
+        <button class="btn-save" onclick="saveEntry('pressao')">Salvar registro</button>
+      </div>
+
+      <div class="card trend-card">
+        <div class="trend-head">
+          <span class="label">Última medição</span>
+          <span class="latest" id="pLatest">—<span class="unit">mmHg</span></span>
+        </div>
+        <div id="pSparkWrap"></div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-tabs" id="pFilters">
+          <button data-days="7" class="active">7d</button>
+          <button data-days="30">30d</button>
+          <button data-days="0">Tudo</button>
+        </div>
+        <button class="export-btn" onclick="exportCSV('pressao')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Exportar
+        </button>
+      </div>
+
+      <div class="history" id="pHistory"></div>
+    </section>
+
+    <!-- ============ SATURAÇÃO PANEL ============ -->
+    <section id="panelSaturacao" class="panel">
+      <div class="card">
+        <h2><span class="dot s"></span>Novo registro</h2>
+        <div class="field-row">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="sData">
+          </div>
+          <div class="field">
+            <label>Hora</label>
+            <input type="time" id="sHora">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Saturação (%)</label>
+            <input type="number" inputmode="numeric" id="sValor" placeholder="Ex: 97">
+          </div>
+          <div class="field">
+            <label>Pulso (opcional)</label>
+            <input type="number" inputmode="numeric" id="sPulso" placeholder="Ex: 78">
+          </div>
+        </div>
+        <div class="context-chips" id="sChips">
+          <div class="chip" data-v="Em repouso">Em repouso</div>
+          <div class="chip" data-v="Após atividade">Após atividade</div>
+          <div class="chip" data-v="Com oxigênio">Com oxigênio</div>
+          <div class="chip" data-v="Deitado">Deitado</div>
+        </div>
+        <button class="btn-save" onclick="saveEntry('saturacao')">Salvar registro</button>
+      </div>
+
+      <div class="card trend-card">
+        <div class="trend-head">
+          <span class="label">Última medição</span>
+          <span class="latest" id="sLatest">—<span class="unit">%</span></span>
+        </div>
+        <div id="sSparkWrap"></div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-tabs" id="sFilters">
+          <button data-days="7" class="active">7d</button>
+          <button data-days="30">30d</button>
+          <button data-days="0">Tudo</button>
+        </div>
+        <button class="export-btn" onclick="exportCSV('saturacao')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Exportar
+        </button>
+      </div>
+
+      <div class="history" id="sHistory"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Storage ---------------- */
+const STORE_KEY = 'saude_registros_v1';
+
+function loadAll(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {glicemia:[], pressao:[]};
+    if(!parsed.saturacao) parsed.saturacao = [];
+    return parsed;
+  }catch(e){ return {glicemia:[], pressao:[], saturacao:[]}; }
+}
+function saveAll(data){
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+let db = loadAll();
+let selectedChip = {glicemia:null, pressao:null, saturacao:null};
+let activeFilter = {glicemia:7, pressao:7, saturacao:7};
+
+/* ---------------- Init defaults ---------------- */
+function pad(n){return n.toString().padStart(2,'0');}
+function nowDate(){const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function nowTime(){const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+
+document.getElementById('gData').value = nowDate();
+document.getElementById('gHora').value = nowTime();
+document.getElementById('pData').value = nowDate();
+document.getElementById('pHora').value = nowTime();
+document.getElementById('sData').value = nowDate();
+document.getElementById('sHora').value = nowTime();
+
+/* ---------------- Mode switch ---------------- */
+function switchMode(mode){
+  document.body.className = 'mode-' + mode;
+  document.getElementById('tabGlicemia').classList.toggle('active', mode==='glicemia');
+  document.getElementById('tabPressao').classList.toggle('active', mode==='pressao');
+  document.getElementById('tabSaturacao').classList.toggle('active', mode==='saturacao');
+  document.getElementById('panelGlicemia').classList.toggle('active', mode==='glicemia');
+  document.getElementById('panelPressao').classList.toggle('active', mode==='pressao');
+  document.getElementById('panelSaturacao').classList.toggle('active', mode==='saturacao');
+}
+
+/* ---------------- Chips ---------------- */
+document.querySelectorAll('#gChips .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#gChips .chip').forEach(c=>c.classList.remove('selected'));
+    if(selectedChip.glicemia === chip.dataset.v){ selectedChip.glicemia = null; }
+    else { chip.classList.add('selected'); selectedChip.glicemia = chip.dataset.v; }
+  });
+});
+document.querySelectorAll('#pChips .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#pChips .chip').forEach(c=>c.classList.remove('selected'));
+    if(selectedChip.pressao === chip.dataset.v){ selectedChip.pressao = null; }
+    else { chip.classList.add('selected'); selectedChip.pressao = chip.dataset.v; }
+  });
+});
+document.querySelectorAll('#sChips .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#sChips .chip').forEach(c=>c.classList.remove('selected'));
+    if(selectedChip.saturacao === chip.dataset.v){ selectedChip.saturacao = null; }
+    else { chip.classList.add('selected'); selectedChip.saturacao = chip.dataset.v; }
+  });
+});
+
+/* ---------------- Save entry ---------------- */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function saveEntry(type){
+  if(type === 'glicemia'){
+    const data = document.getElementById('gData').value;
+    const hora = document.getElementById('gHora').value;
+    const valor = document.getElementById('gValor').value;
+    if(!data || !hora || !valor){ showToast('Preencha data, hora e valor'); return; }
+    db.glicemia.push({id:Date.now(), data, hora, valor:Number(valor), contexto:selectedChip.glicemia});
+    document.getElementById('gValor').value = '';
+    document.querySelectorAll('#gChips .chip').forEach(c=>c.classList.remove('selected'));
+    selectedChip.glicemia = null;
+  } else if(type === 'pressao'){
+    const data = document.getElementById('pData').value;
+    const hora = document.getElementById('pHora').value;
+    const sis = document.getElementById('pSis').value;
+    const dia = document.getElementById('pDia').value;
+    const pulso = document.getElementById('pPulso').value;
+    if(!data || !hora || !sis || !dia){ showToast('Preencha data, hora, sistólica e diastólica'); return; }
+    db.pressao.push({id:Date.now(), data, hora, sistolica:Number(sis), diastolica:Number(dia), pulso: pulso?Number(pulso):null, contexto:selectedChip.pressao});
+    document.getElementById('pSis').value = '';
+    document.getElementById('pDia').value = '';
+    document.getElementById('pPulso').value = '';
+    document.querySelectorAll('#pChips .chip').forEach(c=>c.classList.remove('selected'));
+    selectedChip.pressao = null;
+  } else {
+    const data = document.getElementById('sData').value;
+    const hora = document.getElementById('sHora').value;
+    const valor = document.getElementById('sValor').value;
+    const pulso = document.getElementById('sPulso').value;
+    if(!data || !hora || !valor){ showToast('Preencha data, hora e saturação'); return; }
+    db.saturacao.push({id:Date.now(), data, hora, valor:Number(valor), pulso: pulso?Number(pulso):null, contexto:selectedChip.saturacao});
+    document.getElementById('sValor').value = '';
+    document.getElementById('sPulso').value = '';
+    document.querySelectorAll('#sChips .chip').forEach(c=>c.classList.remove('selected'));
+    selectedChip.saturacao = null;
+  }
+  saveAll(db);
+  showToast('Registro salvo');
+  render();
+}
+
+/* ---------------- Delete ---------------- */
+function deleteEntry(type, id){
+  db[type] = db[type].filter(e=>e.id!==id);
+  saveAll(db);
+  render();
+}
+
+/* ---------------- Filters ---------------- */
+document.querySelectorAll('#gFilters button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#gFilters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter.glicemia = Number(btn.dataset.days);
+    render();
+  });
+});
+document.querySelectorAll('#pFilters button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#pFilters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter.pressao = Number(btn.dataset.days);
+    render();
+  });
+});
+document.querySelectorAll('#sFilters button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#sFilters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter.saturacao = Number(btn.dataset.days);
+    render();
+  });
+});
+
+function withinFilter(dateStr, days){
+  if(!days) return true;
+  const d = new Date(dateStr + 'T00:00:00');
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return d >= cutoff;
+}
+
+/* ---------------- Grouping helpers ---------------- */
+function formatDayLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest = new Date(today); yest.setDate(yest.getDate()-1);
+  if(d.getTime() === today.getTime()) return 'Hoje';
+  if(d.getTime() === yest.getTime()) return 'Ontem';
+  const dias = ['dom','seg','ter','qua','qui','sex','sáb'];
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return `${dias[d.getDay()]}, ${d.getDate()} ${meses[d.getMonth()]}`;
+}
+
+/* ---------------- Render: Glicemia ---------------- */
+function renderGlicemia(){
+  const list = [...db.glicemia].filter(e=>withinFilter(e.data, activeFilter.glicemia));
+  list.sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+
+  // Latest
+  const latestEl = document.getElementById('gLatest');
+  if(db.glicemia.length){
+    const sorted = [...db.glicemia].sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+    latestEl.innerHTML = sorted[0].valor + '<span class="unit">mg/dL</span>';
+  } else {
+    latestEl.innerHTML = '—<span class="unit">mg/dL</span>';
+  }
+
+  // Sparkline (chronological, last up to 20 of filtered set)
+  const sparkData = [...list].sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora)).slice(-20);
+  document.getElementById('gSparkWrap').innerHTML = sparkData.length >= 2
+    ? renderSparkline(sparkData.map(e=>e.valor), 'var(--glic)', 70, [])
+    : `<div class="empty-trend">Registre pelo menos 2 medições para ver a tendência</div>`;
+
+  // History grouped by day
+  const historyEl = document.getElementById('gHistory');
+  if(list.length === 0){
+    historyEl.innerHTML = emptyStateHTML('Nenhum registro de glicemia neste período.');
+    return;
+  }
+  const groups = groupByDay(list);
+  historyEl.innerHTML = groups.map(g => `
+    <div class="day-group">
+      <div class="day-label">${formatDayLabel(g.data)}</div>
+      ${g.items.map(e => `
+        <div class="entry-row ${e.valor >= 180 || e.valor < 70 ? 'high':''}">
+          <span class="rule-dot"></span>
+          <span class="entry-time">${e.hora}</span>
+          <span class="entry-value">${e.valor}<span class="unit">mg/dL</span></span>
+          <span class="entry-context">${e.contexto || ''}</span>
+          <button class="entry-del" onclick="deleteEntry('glicemia', ${e.id})">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+/* ---------------- Render: Pressão ---------------- */
+function renderPressao(){
+  const list = [...db.pressao].filter(e=>withinFilter(e.data, activeFilter.pressao));
+  list.sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+
+  const latestEl = document.getElementById('pLatest');
+  if(db.pressao.length){
+    const sorted = [...db.pressao].sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+    latestEl.innerHTML = `${sorted[0].sistolica}/${sorted[0].diastolica}<span class="unit">mmHg</span>`;
+  } else {
+    latestEl.innerHTML = '—<span class="unit">mmHg</span>';
+  }
+
+  const sparkData = [...list].sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora)).slice(-20);
+  document.getElementById('pSparkWrap').innerHTML = sparkData.length >= 2
+    ? renderSparkline(sparkData.map(e=>e.sistolica), 'var(--pres)', 70, sparkData.map(e=>e.diastolica))
+    : `<div class="empty-trend">Registre pelo menos 2 medições para ver a tendência</div>`;
+
+  const historyEl = document.getElementById('pHistory');
+  if(list.length === 0){
+    historyEl.innerHTML = emptyStateHTML('Nenhum registro de pressão neste período.');
+    return;
+  }
+  const groups = groupByDay(list);
+  historyEl.innerHTML = groups.map(g => `
+    <div class="day-group">
+      <div class="day-label">${formatDayLabel(g.data)}</div>
+      ${g.items.map(e => `
+        <div class="entry-row ${e.sistolica >= 140 || e.diastolica >= 90 ? 'high':''}">
+          <span class="rule-dot"></span>
+          <span class="entry-time">${e.hora}</span>
+          <span class="entry-value">${e.sistolica}/${e.diastolica}${e.pulso ? ` <span class="unit">· ${e.pulso}bpm</span>`:''}</span>
+          <span class="entry-context">${e.contexto || ''}</span>
+          <button class="entry-del" onclick="deleteEntry('pressao', ${e.id})">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+/* ---------------- Render: Saturação ---------------- */
+function renderSaturacao(){
+  const list = [...db.saturacao].filter(e=>withinFilter(e.data, activeFilter.saturacao));
+  list.sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+
+  const latestEl = document.getElementById('sLatest');
+  if(db.saturacao.length){
+    const sorted = [...db.saturacao].sort((a,b)=> (b.data+b.hora).localeCompare(a.data+a.hora));
+    latestEl.innerHTML = sorted[0].valor + '<span class="unit">%</span>';
+  } else {
+    latestEl.innerHTML = '—<span class="unit">%</span>';
+  }
+
+  const sparkData = [...list].sort((a,b)=> (a.data+a.hora).localeCompare(b.data+b.hora)).slice(-20);
+  document.getElementById('sSparkWrap').innerHTML = sparkData.length >= 2
+    ? renderSparkline(sparkData.map(e=>e.valor), 'var(--sat)', 70, [])
+    : `<div class="empty-trend">Registre pelo menos 2 medições para ver a tendência</div>`;
+
+  const historyEl = document.getElementById('sHistory');
+  if(list.length === 0){
+    historyEl.innerHTML = emptyStateHTML('Nenhum registro de saturação neste período.');
+    return;
+  }
+  const groups = groupByDay(list);
+  historyEl.innerHTML = groups.map(g => `
+    <div class="day-group">
+      <div class="day-label">${formatDayLabel(g.data)}</div>
+      ${g.items.map(e => `
+        <div class="entry-row ${e.valor < 92 ? 'high':''}">
+          <span class="rule-dot"></span>
+          <span class="entry-time">${e.hora}</span>
+          <span class="entry-value">${e.valor}<span class="unit">%</span>${e.pulso ? ` <span class="unit">· ${e.pulso}bpm</span>`:''}</span>
+          <span class="entry-context">${e.contexto || ''}</span>
+          <button class="entry-del" onclick="deleteEntry('saturacao', ${e.id})">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function groupByDay(list){
+  const map = new Map();
+  list.forEach(e=>{
+    if(!map.has(e.data)) map.set(e.data, []);
+    map.get(e.data).push(e);
+  });
+  return [...map.entries()].map(([data, items])=>({data, items}));
+}
+
+function emptyStateHTML(msg){
+  return `<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4M2 12a10 10 0 1020 0 10 10 0 00-20 0z" opacity="0"/><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 6v6l4 2"/></svg>
+    <p>${msg}<br>Use o formulário acima para começar.</p>
+  </div>`;
+}
+
+/* ---------------- Sparkline (SVG, dual-line capable for pressão) ---------------- */
+function renderSparkline(values, color, height, secondary){
+  const w = 400, h = height, pad = 8;
+  const all = secondary && secondary.length ? values.concat(secondary) : values;
+  const min = Math.min(...all), max = Math.max(...all);
+  const range = (max - min) || 1;
+  const stepX = (w - pad*2) / (values.length - 1);
+
+  function pathFor(vals){
+    return vals.map((v,i)=>{
+      const x = pad + i*stepX;
+      const y = pad + (h - pad*2) * (1 - (v - min)/range);
+      return `${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }
+  function dotsFor(vals){
+    return vals.map((v,i)=>{
+      const x = pad + i*stepX;
+      const y = pad + (h - pad*2) * (1 - (v - min)/range);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="${color}"/>`;
+    }).join('');
+  }
+
+  let secondaryPath = '';
+  if(secondary && secondary.length){
+    secondaryPath = `<path d="${pathFor(secondary)}" fill="none" stroke="var(--ink-faint)" stroke-width="1.6" stroke-dasharray="3 3" stroke-linecap="round"/>`;
+  }
+
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">
+    <path d="${pathFor(values)}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${secondaryPath}
+    ${dotsFor(values)}
+  </svg>`;
+}
+
+/* ---------------- CSV Export ---------------- */
+function exportCSV(type){
+  let rows, filename;
+  if(type === 'glicemia'){
+    rows = [['data','hora','valor_mgdl','contexto']];
+    [...db.glicemia].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
+      rows.push([e.data, e.hora, e.valor, e.contexto || '']);
+    });
+    filename = 'glicemia.csv';
+  } else if(type === 'pressao'){
+    rows = [['data','hora','sistolica','diastolica','pulso','contexto']];
+    [...db.pressao].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
+      rows.push([e.data, e.hora, e.sistolica, e.diastolica, e.pulso || '', e.contexto || '']);
+    });
+    filename = 'pressao.csv';
+  } else {
+    rows = [['data','hora','saturacao_pct','pulso','contexto']];
+    [...db.saturacao].sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)).forEach(e=>{
+      rows.push([e.data, e.hora, e.valor, e.pulso || '', e.contexto || '']);
+    });
+    filename = 'saturacao.csv';
+  }
+  if(rows.length === 1){ showToast('Nada para exportar ainda'); return; }
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado');
+}
+
+/* ---------------- Render all ---------------- */
+function render(){
+  renderGlicemia();
+  renderPressao();
+  renderSaturacao();
+}
+render();
+</script>
+</body>
+</html>
